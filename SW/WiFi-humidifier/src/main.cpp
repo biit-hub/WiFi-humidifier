@@ -38,13 +38,13 @@ void handleSetTime() {
   if (server.hasArg("datetime")) {
     String datetime = server.arg("datetime");
     int year, month, day, hour, minute, second;
-    if (sscanf(datetime.c_str(), "%d-%d-%d %d:%d:%d", &year, &month, &day, &hour, &minute, &second) == 6) {
+    if (sscanf(datetime.c_str(), "%d-%d-%dT%d:%d", &year, &month, &day, &hour, &minute) == 5) {
       rtc.setYear(year - 2000); // DS3231 library uses years since 2000
       rtc.setMonth(month);
       rtc.setDate(day);
       rtc.setHour(hour);
       rtc.setMinute(minute);
-      rtc.setSecond(second);
+      rtc.setSecond(0); // Set seconds to 0 since datetime-local input does not provide seconds
     }
   }
   server.sendHeader("Location", "/settings");

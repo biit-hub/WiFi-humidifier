@@ -9,7 +9,7 @@
     .header a:hover { background-color: #ddd; color: black; }
     .header a.active { background-color: #4CAF50; color: white; }
     .form { margin: 20px; }
-    input[type=text] { padding: 10px; width: 80%; font-size: 18px; margin: 10px 0; }
+    input[type=datetime-local] { padding: 10px; width: 80%; font-size: 18px; margin: 10px 0; }
     input[type=submit] { padding: 10px 20px; font-size: 18px; cursor: pointer; background-color: #4CAF50; color: white; border: none; }
   </style>
 </head>
@@ -21,8 +21,8 @@
   <h1>ESP8266 Settings</h1>
   <div class="form">
     <form action="/set_time" method="POST">
-      <label for="datetime">Set Date and Time (YYYY-MM-DD HH:MM:SS):</label><br>
-      <input type="text" id="datetime" name="datetime"><br>
+      <label for="datetime">Set Date and Time:</label><br>
+      <input type="datetime-local" id="datetime" name="datetime"><br>
       <input type="submit" value="Set Time">
     </form>
   </div>
