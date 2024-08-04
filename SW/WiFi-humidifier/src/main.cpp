@@ -5,6 +5,7 @@
 #include <ArduinoOTA.h>
 #include <Wire.h>
 #include <DS3231.h>
+#include <FS.h>
 #include "wifi_credentials.h" // WLAN-Daten importieren
 
 #define led_pin 1    // TX-Pin (GPIO1)
@@ -13,64 +14,23 @@
 ESP8266WebServer server(80);
 DS3231 rtc;
 
+String readHTMLFile(const char* path) {
+  File file = SPIFFS.open(path, "r");
+  if (!file) {
+    return String("Failed to open file");
+  }
+  String content = file.readString();
+  file.close();
+  return content;
+}
+
 void handleRoot() {
-  String html = "<html>\
-  <head>\
-    <title>ESP8266 Control</title>\
-    <style>\
-      body { font-family: Arial, sans-serif; text-align: center; }\
-      .button { padding: 10px 20px; font-size: 20px; cursor: pointer; }\
-      .on { background-color: #4CAF50; color: white; }\
-      .off { background-color: #f44336; color: white; }\
-      .header { overflow: hidden; background-color: #f1f1f1; padding: 20px 10px; }\
-      .header a { float: left; color: black; text-align: center; padding: 12px; text-decoration: none; font-size: 18px; line-height: 25px; border-radius: 4px; }\
-      .header a:hover { background-color: #ddd; color: black; }\
-      .header a.active { background-color: #4CAF50; color: white; }\
-    </style>\
-  </head>\
-  <body>\
-    <div class=\"header\">\
-      <a href=\"/\" class=\"active\">Dashboard</a>\
-      <a href=\"/settings\">Settings</a>\
-    </div>\
-    <h1>ESP8266 LED Control</h1>\
-    <p><button class=\"button on\" onclick=\"location.href='/led/on'\">Turn On</button></p>\
-    <p><button class=\"button off\" onclick=\"location.href='/led/off'\">Turn Off</button></p>\
-  </body>\
-  </html>";
+  String html = readHTMLFile("/index.html");
   server.send(200, "text/html", html);
 }
 
 void handleSettings() {
-  String html = "<html>\
-  <head>\
-    <title>ESP8266 Settings</title>\
-    <style>\
-      body { font-family: Arial, sans-serif; text-align: center; }\
-      .header { overflow: hidden; background-color: #f1f1f1; padding: 20px 10px; }\
-      .header a { float: left; color: black; text-align: center; padding: 12px; text-decoration: none; font-size: 18px; line-height: 25px; border-radius: 4px; }\
-      .header a:hover { background-color: #ddd; color: black; }\
-      .header a.active { background-color: #4CAF50; color: white; }\
-      .form { margin: 20px; }\
-      input[type=text] { padding: 10px; width: 80%; font-size: 18px; margin: 10px 0; }\
-      input[type=submit] { padding: 10px 20px; font-size: 18px; cursor: pointer; background-color: #4CAF50; color: white; border: none; }\
-    </style>\
-  </head>\
-  <body>\
-    <div class=\"header\">\
-      <a href=\"/\">Dashboard</a>\
-      <a href=\"/settings\" class=\"active\">Settings</a>\
-    </div>\
-    <h1>ESP8266 Settings</h1>\
-    <div class=\"form\">\
-      <form action=\"/set_time\" method=\"POST\">\
-        <label for=\"datetime\">Set Date and Time (YYYY-MM-DD HH:MM:SS):</label><br>\
-        <input type=\"text\" id=\"datetime\" name=\"datetime\"><br>\
-        <input type=\"submit\" value=\"Set Time\">\
-      </form>\
-    </div>\
-  </body>\
-  </html>";
+  String html = readHTMLFile("/settings.html");
   server.send(200, "text/html", html);
 }
 
@@ -153,6 +113,12 @@ void setup() {
     rtc.setHour(12);            // Set hour to 12
     rtc.setMinute(0);           // Set minute to 0
     rtc.setSecond(0);           // Set second to 0
+  }
+
+  // Initialize SPIFFS
+  if (!SPIFFS.begin()) {
+    Serial.println("Failed to mount file system");
+    return;
   }
 
   // Start the web server
