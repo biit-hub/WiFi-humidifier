@@ -1,25 +1,63 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
+#include <ESP8266WebServer.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-#include "wifi_credentials.h"
+#include "wifi_credentials.h" // WLAN-Daten importieren
+
+#define led_pin 1    // TX-Pin (GPIO1)
+#define button_pin 3 // RX-Pin (GPIO3)
+
+ESP8266WebServer server(80);
+
+void handleRoot() {
+  String html = "<html>\
+  <head>\
+    <title>ESP8266 LED Control</title>\
+    <style>\
+      body { font-family: Arial, sans-serif; text-align: center; }\
+      .button { padding: 10px 20px; font-size: 20px; cursor: pointer; }\
+      .on { background-color: #4CAF50; color: white; }\
+      .off { background-color: #f44336; color: white; }\
+    </style>\
+  </head>\
+  <body>\
+    <h1>ESP8266 LED Control</h1>\
+    <p><button class=\"button on\" onclick=\"location.href='/led/on'\">Turn On</button></p>\
+    <p><button class=\"button off\" onclick=\"location.href='/led/off'\">Turn Off</button></p>\
+  </body>\
+  </html>";
+  server.send(200, "text/html", html);
+}
+
+void handleLEDOn() {
+  digitalWrite(led_pin, LOW); // Turn on the LED
+  server.sendHeader("Location", "/");
+  server.send(303);
+}
+
+void handleLEDOff() {
+  digitalWrite(led_pin, HIGH); // Turn off the LED
+  server.sendHeader("Location", "/");
+  server.send(303);
+}
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println("Booting");
+  // Initialize the TX pin (Onboard LED) as an output
+  pinMode(led_pin, OUTPUT);
+  digitalWrite(led_pin, HIGH); // Turn off the LED at the beginning (active low)
 
+  // Initialize the RX pin (Button) as an input with internal pull-up resistor
+  pinMode(button_pin, INPUT_PULLUP);
+
+  // Connect to WiFi
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
-    Serial.println("Connecting to WiFi...");
+    yield(); // Watchdog-Timer zurücksetzen
   }
-
-  Serial.println("Connected to WiFi");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
 
   // OTA setup
   ArduinoOTA.onStart([]() {
@@ -29,36 +67,29 @@ void setup() {
     } else { // U_SPIFFS
       type = "filesystem";
     }
-    Serial.println("Start updating " + type);
   });
 
   ArduinoOTA.onEnd([]() {
-    Serial.println("\nEnd");
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) {
-      Serial.println("Auth Failed");
-    } else if (error == OTA_BEGIN_ERROR) {
-      Serial.println("Begin Failed");
-    } else if (error == OTA_CONNECT_ERROR) {
-      Serial.println("Connect Failed");
-    } else if (error == OTA_RECEIVE_ERROR) {
-      Serial.println("Receive Failed");
-    } else if (error == OTA_END_ERROR) {
-      Serial.println("End Failed");
-    }
   });
 
   ArduinoOTA.begin();
-  Serial.println("Ready for OTA updates");
+
+  // Start the web server
+  server.on("/", handleRoot);
+  server.on("/led/on", handleLEDOn);
+  server.on("/led/off", handleLEDOff);
+  server.begin();
 }
 
 void loop() {
   ArduinoOTA.handle(); // Handle OTA updates
+  server.handleClient(); // Handle web server
+
+  yield(); // Watchdog-Timer zurücksetzen
 }
