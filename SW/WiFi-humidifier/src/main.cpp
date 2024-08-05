@@ -32,18 +32,23 @@ void handleRoot() {
 
 void handleSettings() {
   DateTime now = rtc.now();
-  char currentDateTime[25];
-  sprintf(currentDateTime, "%04d-%02d-%02dT%02d:%02d", now.year(), now.month(), now.day(), now.hour(), now.minute());
+  char currentDate[11];
+  char currentTime[6];
+  sprintf(currentDate, "%02d.%02d.%04d", now.day(), now.month(), now.year());
+  sprintf(currentTime, "%02d:%02d", now.hour(), now.minute());
   String html = readHTMLFile("/settings.html");
-  html.replace("{{datetime}}", String(currentDateTime));
+  html.replace("{{datetime}}", String(currentDate) + " " + String(currentTime));
+  html.replace("{{current_date}}", String(currentDate));
+  html.replace("{{current_time}}", String(currentTime));
   server.send(200, "text/html", html);
 }
 
 void handleSetTime() {
-  if (server.hasArg("datetime")) {
-    String datetime = server.arg("datetime");
-    int year, month, day, hour, minute;
-    if (sscanf(datetime.c_str(), "%d-%d-%dT%d:%d", &year, &month, &day, &hour, &minute) == 5) {
+  if (server.hasArg("date") && server.hasArg("time")) {
+    String date = server.arg("date");
+    String time = server.arg("time");
+    int day, month, year, hour, minute;
+    if (sscanf(date.c_str(), "%d-%d-%d", &year, &month, &day) == 3 && sscanf(time.c_str(), "%d:%d", &hour, &minute) == 2) {
       rtc.adjust(DateTime(year, month, day, hour, minute, 0));
     }
   }
