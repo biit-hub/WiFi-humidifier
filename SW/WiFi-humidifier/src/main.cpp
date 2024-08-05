@@ -14,6 +14,7 @@
 
 ESP8266WebServer server(80);
 RTC_DS3231 rtc;
+bool rtcConnected = true;
 
 String readHTMLFile(const char* path) {
   File file = SPIFFS.open(path, "r");
@@ -31,20 +32,30 @@ void handleRoot() {
 }
 
 void handleSettings() {
-  DateTime now = rtc.now();
-  char currentDate[11];
-  char currentTime[6];
-  sprintf(currentDate, "%02d.%02d.%04d", now.day(), now.month(), now.year());
-  sprintf(currentTime, "%02d:%02d", now.hour(), now.minute());
   String html = readHTMLFile("/settings.html");
-  html.replace("{{datetime}}", String(currentDate) + " " + String(currentTime));
-  html.replace("{{current_date}}", String(currentDate));
-  html.replace("{{current_time}}", String(currentTime));
+
+  if (rtcConnected) {
+    DateTime now = rtc.now();
+    char currentDate[11];
+    char currentTime[6];
+    sprintf(currentDate, "%02d.%02d.%04d", now.day(), now.month(), now.year());
+    sprintf(currentTime, "%02d:%02d", now.hour(), now.minute());
+    html.replace("{{datetime}}", String(currentDate) + " " + String(currentTime));
+    html.replace("{{current_date}}", String(currentDate));
+    html.replace("{{current_time}}", String(currentTime));
+    html.replace("{{disable_controls}}", "");
+  } else {
+    html.replace("{{datetime}}", "RTC not connected");
+    html.replace("{{current_date}}", "");
+    html.replace("{{current_time}}", "");
+    html.replace("{{disable_controls}}", "disabled");
+  }
+
   server.send(200, "text/html", html);
 }
 
 void handleSetTime() {
-  if (server.hasArg("date") && server.hasArg("time")) {
+  if (rtcConnected && server.hasArg("date") && server.hasArg("time")) {
     String date = server.arg("date");
     String time = server.arg("time");
     int day, month, year, hour, minute;
@@ -109,10 +120,8 @@ void setup() {
   // Initialize RTC
   Wire.begin(0, 2);
   if (!rtc.begin()) {
-    while (1);
-  }
-
-  if (rtc.lostPower()) {
+    rtcConnected = false;
+  } else if (rtc.lostPower()) {
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
 
