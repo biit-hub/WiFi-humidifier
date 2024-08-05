@@ -4,7 +4,8 @@
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <Wire.h>
-#include <DS3231.h>
+#include <SPI.h>
+#include <RTClib.h>
 #include <FS.h>
 #include "wifi_credentials.h" // WLAN-Daten importieren
 
@@ -12,7 +13,7 @@
 #define button_pin 3 // RX-Pin (GPIO3)
 
 ESP8266WebServer server(80);
-DS3231 rtc;
+RTC_DS3231 rtc;
 
 String readHTMLFile(const char* path) {
   File file = SPIFFS.open(path, "r");
@@ -30,21 +31,20 @@ void handleRoot() {
 }
 
 void handleSettings() {
+  DateTime now = rtc.now();
+  char currentDateTime[25];
+  sprintf(currentDateTime, "%04d-%02d-%02dT%02d:%02d", now.year(), now.month(), now.day(), now.hour(), now.minute());
   String html = readHTMLFile("/settings.html");
+  html.replace("{{datetime}}", String(currentDateTime));
   server.send(200, "text/html", html);
 }
 
 void handleSetTime() {
   if (server.hasArg("datetime")) {
     String datetime = server.arg("datetime");
-    int year, month, day, hour, minute, second;
+    int year, month, day, hour, minute;
     if (sscanf(datetime.c_str(), "%d-%d-%dT%d:%d", &year, &month, &day, &hour, &minute) == 5) {
-      rtc.setYear(year - 2000); // DS3231 library uses years since 2000
-      rtc.setMonth(month);
-      rtc.setDate(day);
-      rtc.setHour(hour);
-      rtc.setMinute(minute);
-      rtc.setSecond(0); // Set seconds to 0 since datetime-local input does not provide seconds
+      rtc.adjust(DateTime(year, month, day, hour, minute, 0));
     }
   }
   server.sendHeader("Location", "/settings");
@@ -102,22 +102,17 @@ void setup() {
   ArduinoOTA.begin();
 
   // Initialize RTC
-  Wire.begin();
+  Wire.begin(0, 2);
+  if (!rtc.begin()) {
+    while (1);
+  }
 
-  // Check if the RTC has lost power
-  if (rtc.getYear() == 85) { // Default year is 2000 + 85 = 2085
-    // Set the RTC to the date & time this sketch was compiled
-    rtc.setYear(2023 - 2000);   // Set year to 2023
-    rtc.setMonth(8);            // Set month to August
-    rtc.setDate(6);             // Set day to 6
-    rtc.setHour(12);            // Set hour to 12
-    rtc.setMinute(0);           // Set minute to 0
-    rtc.setSecond(0);           // Set second to 0
+  if (rtc.lostPower()) {
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
 
   // Initialize SPIFFS
   if (!SPIFFS.begin()) {
-    Serial.println("Failed to mount file system");
     return;
   }
 

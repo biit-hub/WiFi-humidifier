@@ -20,6 +20,7 @@
   </div>
   <h1>ESP8266 Settings</h1>
   <div class="form">
+    <p>Current Date and Time: {{datetime}}</p>
     <form action="/set_time" method="POST">
       <label for="datetime">Set Date and Time:</label><br>
       <input type="datetime-local" id="datetime" name="datetime"><br>
