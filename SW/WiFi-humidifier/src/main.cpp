@@ -7,14 +7,24 @@
 #include <SPI.h>
 #include <RTClib.h>
 #include <FS.h>
+#include <ArduinoJson.h>
 #include "wifi_credentials.h" // WLAN-Daten importieren
 
-#define led_pin 1    // TX-Pin (GPIO1)
+#define led_pin 2    // TX-Pin (GPIO1)
 #define button_pin 3 // RX-Pin (GPIO3)
 
 ESP8266WebServer server(80);
 RTC_DS3231 rtc;
 bool rtcConnected = true;
+
+struct Timer {
+  String days;
+  String time;
+  int duration;
+};
+
+std::vector<Timer> timers;
+unsigned long ledOffTime = 0;
 
 String readHTMLFile(const char* path) {
   File file = SPIFFS.open(path, "r");
@@ -28,6 +38,11 @@ String readHTMLFile(const char* path) {
 
 void handleRoot() {
   String html = readHTMLFile("/index.html");
+  String timerListHtml;
+  for (size_t i = 0; i < timers.size(); i++) {
+    timerListHtml += "<tr><td>" + timers[i].days + "</td><td>" + timers[i].time + "</td><td>" + String(timers[i].duration) + "</td><td><button onclick=\"location.href='/delete_timer?index=" + String(i) + "'\">Delete</button></td></tr>";
+  }
+  html.replace("<!-- Timer entries will be dynamically inserted here -->", timerListHtml);
   server.send(200, "text/html", html);
 }
 
@@ -67,8 +82,29 @@ void handleSetTime() {
   server.send(303);
 }
 
+void handleAddTimer() {
+  if (server.hasArg("days") && server.hasArg("time") && server.hasArg("duration")) {
+    Timer newTimer = {server.arg("days"), server.arg("time"), server.arg("duration").toInt()};
+    timers.push_back(newTimer);
+  }
+  server.sendHeader("Location", "/");
+  server.send(303);
+}
+
+void handleDeleteTimer() {
+  if (server.hasArg("index")) {
+    int index = server.arg("index").toInt();
+    if (index >= 0 && index < timers.size()) {
+      timers.erase(timers.begin() + index);
+    }
+  }
+  server.sendHeader("Location", "/");
+  server.send(303);
+}
+
 void handleLEDOn() {
   digitalWrite(led_pin, LOW); // Turn on the LED
+  ledOffTime = millis() + timers[0].duration * 60000;
   server.sendHeader("Location", "/");
   server.send(303);
 }
@@ -134,6 +170,8 @@ void setup() {
   server.on("/", handleRoot);
   server.on("/settings", handleSettings);
   server.on("/set_time", HTTP_POST, handleSetTime);
+  server.on("/add_timer", HTTP_POST, handleAddTimer);
+  server.on("/delete_timer", handleDeleteTimer);
   server.on("/led/on", handleLEDOn);
   server.on("/led/off", handleLEDOff);
   server.begin();
@@ -142,6 +180,27 @@ void setup() {
 void loop() {
   ArduinoOTA.handle(); // Handle OTA updates
   server.handleClient(); // Handle web server
+
+  if (rtcConnected) {
+    DateTime now = rtc.now();
+    for (auto& timer : timers) {
+      int hour, minute;
+      sscanf(timer.time.c_str(), "%d:%d", &hour, &minute);
+      if (now.hour() == hour && now.minute() == minute && now.second() == 0) {
+        // Check if today is one of the specified days
+        String day = String(now.dayOfTheWeek() + 1); // Convert to 1-7 (Sun-Sat)
+        if (timer.days.indexOf(day) >= 0) {
+          digitalWrite(led_pin, LOW); // Turn on the LED
+          ledOffTime = millis() + timer.duration * 60000;
+        }
+      }
+    }
+  }
+
+  if (ledOffTime > 0 && millis() > ledOffTime) {
+    digitalWrite(led_pin, HIGH); // Turn off the LED
+    ledOffTime = 0;
+  }
 
   yield(); // Watchdog-Timer zurücksetzen
 }
