@@ -1,28 +1,15 @@
 # WiFi-humidifier
 
 ## Anleitung
-1. Im Ordner `include` eine Datei mit dem Namen `wifi_credentials.h`. Darin befinden sich die Credentials um sich mit dem Gerät zu verbinden, falls keine Credentials gespeichert sind und das Gerät in den AccessPoint-Modus geht. Die SSID und das Passwort können anpasst werden.
-```c
-#ifndef WIFI_CREDENTIALS_H
-#define WIFI_CREDENTIALS_H
-
-const char* ssid_ap = "ssid";      // set ssid
-const char* pass_ap = "pass";      // set password
-const char* hostname = "wifi-humidifier";
-
-#endif // WIFI_CREDENTIALS_H
-```
-2. Programm auf den Controller laden
-4. Im Browser `wifi-humidifier.local` eingeben. Die folgende Webseite wird angezeigt.
-![alt text](img/dashboard.png)
-5. Unter Settings kann die Zeit gesetzt werden.
-![alt text](img/settings.png)
-
-Wenn die Logindaten für das Netzwerk gelöscht wurden oder noch nie eingegeben wurden, folgende Anleitung befolgen
-1. Mit einem Gerät (PC oder Smartphone) mit dem AccessPoint verbinden. Die SSID und das Passwort sind in der Datei `wifi_credentials.h` zu finden.
+Wenn bereits Logindaten für das Netzwerk eingegeben wurden, zu Schritt 5 springen
+1. Mit einem Gerät (PC oder Smartphone) mit dem AccessPoint `humi` mit dem Passwort `password` verbinden.
 2. Im Browser die IP-Adresse `192.168.4.1` aufrufen.
 3. Logindaten für das Netzwerk eingeben.
 4. Gerät neustarten. Das Gerät sollte sich jetzt mit dem Heimnetzwerk verbinden.
+5. Im Browser `wifi-humidifier.local` eingeben. Die folgende Webseite wird angezeigt.
+![alt text](img/dashboard.png)
+6. Unter Settings kann die Zeit gesetzt werden.
+![alt text](img/settings.png)
 
 ## Hardware
 ![alt text](img/hardware.png)
