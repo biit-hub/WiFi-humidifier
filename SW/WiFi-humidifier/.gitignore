@@ -7,4 +7,3 @@ include/README
 src/README
 test/README
 lib/README
-include/wifi_credentials.h
