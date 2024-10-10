@@ -8,12 +8,12 @@
 
 const char* ssid_ap = "ssid";      // set ssid
 const char* pass_ap = "pass";      // set password
+const char* hostname = "wifi-humidifier";
 
 #endif // WIFI_CREDENTIALS_H
 ```
 2. Programm auf den Controller laden
-3. Die IP-Adresse des Controllers herausfinden. Am besten über den Router.
-4. Die IP-Adresse des Controllers im Browser eingeben. Die folgende Webseite wird angezeigt.
+4. Im Browser `wifi-humidifier.local` eingeben. Die folgende Webseite wird angezeigt.
 ![alt text](img/dashboard.png)
 5. Unter Settings kann die Zeit gesetzt werden.
 ![alt text](img/settings.png)
@@ -32,6 +32,5 @@ Wenn die Logindaten für das Netzwerk gelöscht wurden oder noch nie eingegeben 
 4. Spannungsanschluss 3.3V
 
 ## Optimierungen
-- `ESP8266mDNS`-Bibliothek verwenden, damit der Webserver über einen Namen aufgerufen werden kann
 - NodeMCU (grösserer Controller mit mehr Pins) verwenden um den Controller bei Bedarf auch mit Hardware erweitern können
 ![alt text](img/nodeMcu.png)

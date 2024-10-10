@@ -10,6 +10,7 @@
 #include <ArduinoJson.h>
 #include "wifi_credentials.h" // WLAN-Daten importieren
 #include <Preferences.h>
+#include <ESP8266mDNS.h>
 
 #define led_pin 2    // TX-Pin (GPIO1)
 #define button_pin 3 // RX-Pin (GPIO3)
@@ -238,6 +239,13 @@ void setup() {
     server.on("/led/on", handleLEDOn);
     server.on("/led/off", handleLEDOff);
     server.begin();
+
+    if (!MDNS.begin(hostname)) {
+      while (1) {
+        yield();
+      }
+    }
+    MDNS.addService("http", "tcp", 80); // Add service to MDNS-SD
   }
 }
 
@@ -265,6 +273,8 @@ void loop() {
     digitalWrite(led_pin, HIGH); // Turn off the LED
     ledOffTime = 0;
   }
+
+  MDNS.update();
 
   yield(); // Watchdog-Timer zurücksetzen
 }

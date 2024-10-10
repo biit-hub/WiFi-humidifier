@@ -3,5 +3,6 @@
 
 const char* ssid_ap = "humi";
 const char* pass_ap = "password";
+const char* hostname = "wifi-humidifier";
 
 #endif // WIFI_CREDENTIALS_H
