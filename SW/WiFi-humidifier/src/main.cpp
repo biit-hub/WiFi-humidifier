@@ -6,7 +6,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <RTClib.h>
-#include <FS.h>
+#include <LittleFS.h>
 #include <ArduinoJson.h>
 #include "wifi_credentials.h" // WLAN-Daten importieren
 
@@ -27,7 +27,7 @@ std::vector<Timer> timers;
 unsigned long ledOffTime = 0;
 
 String readHTMLFile(const char* path) {
-  File file = SPIFFS.open(path, "r");
+  File file = LittleFS.open(path, "r");
   if (!file) {
     return String("Failed to open file");
   }
@@ -123,6 +123,11 @@ void setup() {
   // Initialize the RX pin (Button) as an input with internal pull-up resistor
   pinMode(button_pin, INPUT_PULLUP);
 
+  // Initialize LittleFS
+  if (!LittleFS.begin()) {
+    return;
+  }
+
   // Connect to WiFi
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
@@ -137,7 +142,7 @@ void setup() {
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH) {
       type = "sketch";
-    } else { // U_SPIFFS
+    } else { // U_LittleFS
       type = "filesystem";
     }
   });
@@ -159,11 +164,6 @@ void setup() {
     rtcConnected = false;
   } else if (rtc.lostPower()) {
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  }
-
-  // Initialize SPIFFS
-  if (!SPIFFS.begin()) {
-    return;
   }
 
   // Start the web server
