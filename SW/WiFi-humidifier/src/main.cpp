@@ -9,6 +9,7 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include "wifi_credentials.h" // WLAN-Daten importieren
+#include <Preferences.h>
 
 #define led_pin 2    // TX-Pin (GPIO1)
 #define button_pin 3 // RX-Pin (GPIO3)
@@ -16,6 +17,10 @@
 ESP8266WebServer server(80);
 RTC_DS3231 rtc;
 bool rtcConnected = true;
+
+Preferences preferences;
+String ssid;
+String pass;
 
 struct Timer {
   String days;
@@ -128,53 +133,112 @@ void setup() {
     return;
   }
 
-  // Connect to WiFi
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    yield(); // Watchdog-Timer zurücksetzen
-  }
-
-  // OTA setup
-  ArduinoOTA.onStart([]() {
-    String type;
-    if (ArduinoOTA.getCommand() == U_FLASH) {
-      type = "sketch";
-    } else { // U_LittleFS
-      type = "filesystem";
+// if button is pressed for 5 seconds than clear the credentials preferences
+  if(!digitalRead(button_pin)){
+    delay(5000);
+    if(!digitalRead(button_pin)){
+      preferences.begin("credentials", true);
+      preferences.putString("ssid", "");
+      preferences.putString("pass", "");
+      preferences.end();
+      digitalWrite(led_pin, LOW);
+      while(!digitalRead(button_pin)){
+        yield();
+      }
+      digitalWrite(led_pin, HIGH);
     }
-  });
-
-  ArduinoOTA.onEnd([]() {
-  });
-
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-  });
-
-  ArduinoOTA.onError([](ota_error_t error) {
-  });
-
-  ArduinoOTA.begin();
-
-  // Initialize RTC
-  Wire.begin(0, 2);
-  if (!rtc.begin()) {
-    rtcConnected = false;
-  } else if (rtc.lostPower()) {
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
 
-  // Start the web server
-  server.on("/", handleRoot);
-  server.on("/settings", handleSettings);
-  server.on("/set_time", HTTP_POST, handleSetTime);
-  server.on("/add_timer", HTTP_POST, handleAddTimer);
-  server.on("/delete_timer", handleDeleteTimer);
-  server.on("/led/on", handleLEDOn);
-  server.on("/led/off", handleLEDOff);
-  server.begin();
+  preferences.begin("credentials", true);
+  ssid = preferences.getString("ssid", "");
+  pass = preferences.getString("pass", "");
+  preferences.end();
+
+  if (ssid == "") {
+    WiFi.softAP(ssid_ap, pass_ap);
+    server.on("/", HTTP_GET, []() {
+      File file = LittleFS.open("/setup.html", "r");
+      if (!file) {
+        server.send(500, "text/plain", "Failed to open file");
+        return;
+      }
+      server.streamFile(file, "text/html");
+      file.close();
+    });
+
+    server.on("/save", HTTP_POST, []() {
+      if (server.hasArg("ssid") && server.hasArg("pass")) {
+        String ssidParam = server.arg("ssid");
+        String passParam = server.arg("pass");
+        
+        preferences.begin("credentials", false);
+        preferences.putString("ssid", ssidParam);
+        preferences.putString("pass", passParam);
+        preferences.end();
+
+        server.send(200, "text/html", "Saved! Please restart the device.");
+        Serial.println("Credentials saved, please restart the device.");
+      } else {
+        server.send(400, "text/html", "Invalid input!");
+      }
+    });
+
+    server.begin();
+
+    while(1){
+      server.handleClient();
+      yield();
+    }
+
+  } else {
+    // Connect to WiFi
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid.c_str(), pass.c_str());
+
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(1000);
+      yield(); // Watchdog-Timer zurücksetzen
+    }
+  
+    // OTA setup
+    ArduinoOTA.onStart([]() {
+      String type;
+      if (ArduinoOTA.getCommand() == U_FLASH) {
+        type = "sketch";
+      } else { // U_LittleFS
+        type = "filesystem";
+      }
+    });
+
+    ArduinoOTA.onEnd([]() {
+    });
+
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    });
+
+    ArduinoOTA.onError([](ota_error_t error) {
+    });
+
+    ArduinoOTA.begin();
+
+    // Initialize RTC
+    Wire.begin(0, 2);
+    if (!rtc.begin()) {
+      rtcConnected = false;
+    } else if (rtc.lostPower()) {
+      rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    }
+
+    // Start the web server
+    server.on("/", handleRoot);
+    server.on("/settings", handleSettings);
+    server.on("/set_time", HTTP_POST, handleSetTime);
+    server.on("/add_timer", HTTP_POST, handleAddTimer);
+    server.on("/delete_timer", handleDeleteTimer);
+    server.on("/led/on", handleLEDOn);
+    server.on("/led/off", handleLEDOff);
+    server.begin();
+  }
 }
 
 void loop() {
