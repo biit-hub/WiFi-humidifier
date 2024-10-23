@@ -12,8 +12,8 @@
 #include <Preferences.h>
 #include <ESP8266mDNS.h>
 
-#define led_pin 2    // TX-Pin (GPIO1)
-#define button_pin 3 // RX-Pin (GPIO3)
+#define led_pin     2 // todo: change pin
+#define button_pin  3 // todo: change pin
 
 ESP8266WebServer server(80);
 RTC_DS3231 rtc;
@@ -223,7 +223,7 @@ void setup() {
     ArduinoOTA.begin();
 
     // Initialize RTC
-    Wire.begin(0, 2);
+    Wire.begin(0, 2); // todo: change pin
     if (!rtc.begin()) {
       rtcConnected = false;
     } else if (rtc.lostPower()) {
