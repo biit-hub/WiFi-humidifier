@@ -122,6 +122,8 @@ void handleLEDOff() {
 }
 
 void setup() {
+  Serial.begin(115200);
+
   // Initialize the TX pin (Onboard LED) as an output
   pinMode(led_pin, OUTPUT);
   digitalWrite(led_pin, HIGH); // Turn off the LED at the beginning (active low)
@@ -131,6 +133,7 @@ void setup() {
 
   // Initialize LittleFS
   if (!LittleFS.begin()) {
+    Serial.println("An error occurred while mounting LittleFS");
     return;
   }
 
@@ -143,6 +146,7 @@ void setup() {
       preferences.putString("pass", "");
       preferences.end();
       digitalWrite(led_pin, LOW);
+      Serial.println("Removed WLAN credentials");
       while(!digitalRead(button_pin)){
         yield();
       }
@@ -226,6 +230,7 @@ void setup() {
     Wire.begin(0, 2); // todo: change pin
     if (!rtc.begin()) {
       rtcConnected = false;
+      Serial.println("An error occurred while communicate to RTC");
     } else if (rtc.lostPower()) {
       rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     }
@@ -241,6 +246,7 @@ void setup() {
     server.begin();
 
     if (!MDNS.begin(hostname)) {
+      Serial.println("An error occurred while setup mDNS");
       while (1) {
         yield();
       }
