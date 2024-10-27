@@ -12,8 +12,8 @@
 #include <Preferences.h>
 #include <ESP8266mDNS.h>
 
-#define led_pin     2 // todo: change pin
-#define button_pin  3 // todo: change pin
+#define led_pin     12
+#define button_pin  14
 
 ESP8266WebServer server(80);
 RTC_DS3231 rtc;
@@ -109,14 +109,14 @@ void handleDeleteTimer() {
 }
 
 void handleLEDOn() {
-  digitalWrite(led_pin, LOW); // Turn on the LED
+  digitalWrite(led_pin, HIGH); // Turn on the LED
   ledOffTime = millis() + timers[0].duration * 60000;
   server.sendHeader("Location", "/");
   server.send(303);
 }
 
 void handleLEDOff() {
-  digitalWrite(led_pin, HIGH); // Turn off the LED
+  digitalWrite(led_pin, LOW); // Turn off the LED
   server.sendHeader("Location", "/");
   server.send(303);
 }
@@ -124,11 +124,9 @@ void handleLEDOff() {
 void setup() {
   Serial.begin(115200);
 
-  // Initialize the TX pin (Onboard LED) as an output
   pinMode(led_pin, OUTPUT);
-  digitalWrite(led_pin, HIGH); // Turn off the LED at the beginning (active low)
+  digitalWrite(led_pin, LOW);
 
-  // Initialize the RX pin (Button) as an input with internal pull-up resistor
   pinMode(button_pin, INPUT_PULLUP);
 
   // Initialize LittleFS
@@ -150,7 +148,7 @@ void setup() {
       while(!digitalRead(button_pin)){
         yield();
       }
-      digitalWrite(led_pin, HIGH);
+      digitalWrite(led_pin, LOW);
     }
   }
 
@@ -227,7 +225,7 @@ void setup() {
     ArduinoOTA.begin();
 
     // Initialize RTC
-    Wire.begin(0, 2); // todo: change pin
+    Wire.begin(4, 5);
     if (!rtc.begin()) {
       rtcConnected = false;
       Serial.println("An error occurred while communicate to RTC");
@@ -268,7 +266,7 @@ void loop() {
         // Check if today is one of the specified days
         String day = String(now.dayOfTheWeek() + 1); // Convert to 1-7 (Sun-Sat)
         if (timer.days.indexOf(day) >= 0) {
-          digitalWrite(led_pin, LOW); // Turn on the LED
+          digitalWrite(led_pin, HIGH); // Turn on the LED
           ledOffTime = millis() + timer.duration * 60000;
         }
       }
@@ -276,7 +274,7 @@ void loop() {
   }
 
   if (ledOffTime > 0 && millis() > ledOffTime) {
-    digitalWrite(led_pin, HIGH); // Turn off the LED
+    digitalWrite(led_pin, LOW); // Turn off the LED
     ledOffTime = 0;
   }
 
