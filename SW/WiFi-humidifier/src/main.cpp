@@ -73,6 +73,7 @@ void handleSettings() {
     html.replace("{{current_time}}", "");
     html.replace("{{disable_controls}}", "disabled");
   }
+  html.replace("{{error_message}}", error_message);
 
   server.send(200, "text/html", html);
 }
@@ -125,7 +126,6 @@ void handleDeleteTimer() {
 
 void handleLEDOn() {
   digitalWrite(led_pin, HIGH); // Turn on the LED
-  ledOffTime = millis() + timers[0].duration * 60000;
   server.sendHeader("Location", "/");
   server.send(303);
 }
@@ -154,9 +154,9 @@ void setup() {
   if(!digitalRead(button_pin)){
     delay(5000);
     if(!digitalRead(button_pin)){
-      preferences.begin("credentials", true);
-      preferences.putString("ssid", "");
-      preferences.putString("pass", "");
+      preferences.begin("credentials", false);
+      preferences.remove("ssid");
+      preferences.remove("pass");
       preferences.end();
       digitalWrite(led_pin, LOW);
       Serial.println("Removed WLAN credentials");
