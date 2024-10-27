@@ -90,7 +90,7 @@ void handleSetTime() {
     if (dateResult == 3) {
       if(timeResult == 2){
         Serial.print("Set date and time");
-      rtc.adjust(DateTime(year, month, day, hour, minute, 0));
+        rtc.adjust(DateTime(year, month, day, hour, minute, 0));
       }else{
         Serial.print("Failed set time");
         error_message = "Invalid time format";
