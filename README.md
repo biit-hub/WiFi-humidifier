@@ -12,12 +12,18 @@ Wenn bereits Logindaten für das Netzwerk eingegeben wurden, zu Schritt 5 spring
 ![alt text](img/settings.png)
 
 ## Hardware
-![alt text](img/hardware.png)
-1. ESP01-S, Controller inkl. WLAN-Modul
-2. DS3231, RTC-Modul
-3. LED, simuliert Ausgang
-4. Spannungsanschluss 3.3V
+![alt text](img/hardware_NodeMCU.png)
+1. NodeMCU, Controller inkl. WLAN-Modul
+2. LED, simuliert Ausgang
+3. Taster, gedrückt halten und einschalten, sobald die LED leuchtet sind die WLAN credentials gelöscht
+4. DS3231, RTC-Modul
+5. onBoard LED 1
+6. onBoard LED 2
+7. USB-mini Anschluss für Stromversorgung und Serielles Monitoring
+
+### Verbindung
+![alt text](img/connection_1.png)
+![alt text](img/connection_2.png)
+![alt text](img/connection_3.png)
 
 ## Optimierungen
-- NodeMCU (grösserer Controller mit mehr Pins) verwenden um den Controller bei Bedarf auch mit Hardware erweitern können
-![alt text](img/nodeMcu.png)
