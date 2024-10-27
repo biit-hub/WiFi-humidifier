@@ -29,6 +29,8 @@ struct Timer {
   int duration;
 };
 
+String error_message = "";
+
 std::vector<Timer> timers;
 unsigned long ledOffTime = 0;
 
@@ -76,12 +78,25 @@ void handleSettings() {
 }
 
 void handleSetTime() {
+  error_message = "";
+
   if (rtcConnected && server.hasArg("date") && server.hasArg("time")) {
     String date = server.arg("date");
     String time = server.arg("time");
     int day, month, year, hour, minute;
-    if (sscanf(date.c_str(), "%d-%d-%d", &year, &month, &day) == 3 && sscanf(time.c_str(), "%d:%d", &hour, &minute) == 2) {
+    int dateResult = sscanf(date.c_str(), "%d-%d-%d", &year, &month, &day);
+    int timeResult = sscanf(time.c_str(), "%d:%d", &hour, &minute);
+    if (dateResult == 3) {
+      if(timeResult == 2){
+        Serial.print("Set date and time");
       rtc.adjust(DateTime(year, month, day, hour, minute, 0));
+      }else{
+        Serial.print("Failed set time");
+        error_message = "Invalid time format";
+      }
+    }else{
+      Serial.print("Failed set date");
+      error_message = "Invalid date format";
     }
   }
   server.sendHeader("Location", "/settings");

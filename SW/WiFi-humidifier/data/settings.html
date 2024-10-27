@@ -13,6 +13,7 @@
     .form-group label { margin-right: 10px; }
     input[type=date], input[type=time] { padding: 10px; font-size: 18px; }
     input[type=submit] { padding: 10px 20px; font-size: 18px; cursor: pointer; background-color: #4CAF50; color: white; border: none; }
+    .popup { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: #f44336; color: white; padding: 10px; border-radius: 5px; }
   </style>
 </head>
 <body>
@@ -21,19 +22,39 @@
     <a href="/settings" class="active">Settings</a>
   </div>
   <h1>ESP8266 Settings</h1>
+  
+  <!-- Popup-Bereich für Fehlermeldungen -->
+  <div id="popup" class="popup">{{error_message}}</div>
+
   <div class="form">
     <p>Current Date and Time: {{datetime}}</p>
     <form action="/set_time" method="POST">
       <div class="form-group">
         <label for="date">Set Date:</label>
-        <input type="date" id="date" name="date" value="{{current_date}}" {{disable_controls}}>
+        <input type="date" id="date" name="date" value="{{current_date}}">
       </div>
       <div class="form-group">
         <label for="time">Set Time:</label>
-        <input type="time" id="time" name="time" value="{{current_time}}" {{disable_controls}}>
+        <input type="time" id="time" name="time" value="{{current_time}}">
       </div>
-      <input type="submit" value="Set Time" {{disable_controls}}>
+      <input type="submit" value="Set Time">
     </form>
   </div>
+
+  <script>
+    // Funktion zum Anzeigen des Popups
+    function showPopup() {
+      var popup = document.getElementById("popup");
+      if (popup.innerText.trim() !== "") { // Prüfe, ob eine Fehlermeldung vorhanden ist
+        popup.style.display = "block";
+        setTimeout(function() {
+          popup.style.display = "none";
+        }, 3000); // Popup nach 3 Sekunden ausblenden
+      }
+    }
+    
+    // Popup anzeigen, falls eine Fehlermeldung vorhanden ist
+    window.onload = showPopup;
+  </script>
 </body>
 </html>
