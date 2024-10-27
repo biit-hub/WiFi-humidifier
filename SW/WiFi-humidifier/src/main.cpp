@@ -138,6 +138,7 @@ void handleLEDOff() {
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("\n\n\nStartup");
 
   pinMode(led_pin, OUTPUT);
   digitalWrite(led_pin, LOW);
@@ -202,6 +203,7 @@ void setup() {
     });
 
     server.begin();
+    Serial.println("Setup as AP!");
 
     while(1){
       server.handleClient();
@@ -266,6 +268,7 @@ void setup() {
     }
     MDNS.addService("http", "tcp", 80); // Add service to MDNS-SD
   }
+  Serial.println("Setup done!");
 }
 
 void loop() {
